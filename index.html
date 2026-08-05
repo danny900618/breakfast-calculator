@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>早餐店計算機</title>
+<style>
+  :root {
+    --bg: #fdf6ec;
+    --card: #ffffff;
+    --accent: #d97b3f;
+    --accent-dark: #b8622d;
+    --text: #3a2e26;
+    --muted: #8a7b6e;
+    --danger: #c0392b;
+    --border: #eee0d0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    overflow: hidden;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--accent);
+    color: white;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    margin: 0;
+  }
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    align-content: start;
+  }
+  .product-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .product-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+  .product-price {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+  .qty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .qty-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+  .qty-btn:active {
+    background: var(--accent-dark);
+  }
+  .qty-btn.minus {
+    background: #b0a495;
+  }
+  .qty-btn.minus:active {
+    background: #948a7d;
+  }
+  .qty-value {
+    font-size: 2rem;
+    font-weight: 700;
+    min-width: 56px;
+    text-align: center;
+  }
+  .subtotal {
+    text-align: right;
+    font-size: 1.1rem;
+    color: var(--accent-dark);
+    font-weight: 600;
+  }
+  footer.total-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    background: white;
+    border-top: 1px solid var(--border);
+  }
+  .total {
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  .total span {
+    color: var(--accent-dark);
+  }
+  .clear-btn {
+    padding: 16px 24px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--danger);
+    color: white;
+  }
+  .clear-btn:active {
+    opacity: 0.85;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>早餐店計算機</h1>
+  </header>
+
+  <main id="productList"></main>
+
+  <footer class="total-bar">
+    <div class="total">總計 <span id="totalAmount">$0</span></div>
+    <button id="clearBtn" class="clear-btn">清空</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // 商品名稱與價格寫死在這裡，要調整價格或品項直接改這個陣列即可
+  var products = [
+    { id: 'p1', name: '蔥仔條', price: 15 },
+    { id: 'p2', name: '水煎包', price: 17 },
+    { id: 'p3', name: '飲料(包)', price: 20 },
+    { id: 'p4', name: '飲料(杯)', price: 15 }
+  ];
+
+  var quantities = {};
+  products.forEach(function (p) { quantities[p.id] = 0; });
+
+  var productListEl = document.getElementById('productList');
+  var totalAmountEl = document.getElementById('totalAmount');
+
+  function formatMoney(n) {
+    return '$' + n.toLocaleString('en-US');
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderProducts() {
+    productListEl.innerHTML = '';
+    products.forEach(function (p) {
+      var qty = quantities[p.id];
+      var card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML =
+        '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="product-price">單價 ' + formatMoney(p.price) + '</div>' +
+        '<div class="qty-row">' +
+          '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">－</button>' +
+          '<div class="qty-value" id="qty-' + p.id + '">' + qty + '</div>' +
+          '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="1" aria-label="增加">＋</button>' +
+        '</div>' +
+        '<div class="subtotal" id="subtotal-' + p.id + '">' + formatMoney(qty * p.price) + '</div>';
+      productListEl.appendChild(card);
+    });
+    attachQtyHandlers();
+    updateTotal();
+  }
+
+  function changeQty(id, delta) {
+    var product = products.filter(function (p) { return p.id === id; })[0];
+    if (!product) return;
+    var next = (quantities[id] || 0) + delta;
+    if (next < 0) next = 0;
+    quantities[id] = next;
+    document.getElementById('qty-' + id).textContent = next;
+    document.getElementById('subtotal-' + id).textContent = formatMoney(next * product.price);
+    updateTotal();
+  }
+
+  function updateTotal() {
+    var total = 0;
+    products.forEach(function (p) {
+      total += (quantities[p.id] || 0) * p.price;
+    });
+    totalAmountEl.textContent = formatMoney(total);
+  }
+
+  function attachQtyHandlers() {
+    var buttons = productListEl.querySelectorAll('.qty-btn');
+    buttons.forEach(function (btn) {
+      attachRepeatPress(btn, function () {
+        changeQty(btn.getAttribute('data-id'), parseInt(btn.getAttribute('data-dir'), 10));
+      });
+    });
+  }
+
+  // press-and-hold repeat helper for +/- buttons
+  function attachRepeatPress(el, callback) {
+    var timeout = null;
+    var interval = null;
+
+    function start(e) {
+      e.preventDefault();
+      callback();
+      timeout = setTimeout(function () {
+        interval = setInterval(callback, 120);
+      }, 450);
+    }
+    function stop() {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    }
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointerleave', stop);
+    el.addEventListener('pointercancel', stop);
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    products.forEach(function (p) { quantities[p.id] = 0; });
+    renderProducts();
+  });
+
+  renderProducts();
+})();
+</script>
+</body>
+</html>
