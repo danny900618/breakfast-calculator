@@ -102,6 +102,25 @@
   .qty-btn.minus:active {
     background: #948a7d;
   }
+  .qty-btn.plus {
+    font-size: 1.4rem;
+  }
+  .quick-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+  }
+  .qty-btn.plus5 {
+    width: auto;
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 22px;
+    font-size: 1.05rem;
+    background: var(--accent-dark);
+  }
+  .qty-btn.plus5:active {
+    background: #96521f;
+  }
   .qty-value {
     font-size: 2rem;
     font-weight: 700;
@@ -192,10 +211,13 @@
       card.innerHTML =
         '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
         '<div class="product-price">單價 ' + formatMoney(p.price) + '</div>' +
+        '<div class="quick-row">' +
+          '<button class="qty-btn plus5" data-id="' + p.id + '" data-dir="5" aria-label="增加5">+5</button>' +
+        '</div>' +
         '<div class="qty-row">' +
           '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">－</button>' +
           '<div class="qty-value" id="qty-' + p.id + '">' + qty + '</div>' +
-          '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="1" aria-label="增加">＋</button>' +
+          '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="1" aria-label="增加1">+1</button>' +
         '</div>' +
         '<div class="subtotal" id="subtotal-' + p.id + '">' + formatMoney(qty * p.price) + '</div>';
       productListEl.appendChild(card);
