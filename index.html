@@ -66,12 +66,12 @@
     gap: 10px;
   }
   .product-name {
-    font-size: 1.3rem;
-    font-weight: 600;
+    font-size: 2.6rem;
+    font-weight: 700;
   }
   .product-price {
     color: var(--muted);
-    font-size: 1rem;
+    font-size: 2rem;
   }
   .qty-row {
     display: flex;
@@ -129,7 +129,7 @@
   }
   .subtotal {
     text-align: right;
-    font-size: 1.1rem;
+    font-size: 2rem;
     color: var(--accent-dark);
     font-weight: 600;
   }
@@ -160,6 +160,51 @@
   .clear-btn:active {
     opacity: 0.85;
   }
+
+  /* 平板橫放：3 欄 x 2 列，總計與清空放在右側欄 */
+  @media (orientation: landscape) and (min-width: 700px) {
+    .app {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto 1fr 1fr;
+      grid-template-areas:
+        "header header header"
+        "p1     p2     total"
+        "p4     p3     clear";
+      gap: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+    header { grid-area: header; }
+    main, footer.total-bar { display: contents; }
+    .product-card { justify-content: space-between; }
+    .product-card:nth-child(1) { margin-left: 16px; }
+    .product-card:nth-child(4) { margin-left: 16px; }
+    .card-p1 { grid-area: p1; }
+    .card-p2 { grid-area: p2; }
+    .card-p3 { grid-area: p3; }
+    .card-p4 { grid-area: p4; }
+    .total {
+      grid-area: total;
+      margin-right: 16px;
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 2rem;
+    }
+    .total span { font-size: 3rem; }
+    .clear-btn {
+      grid-area: clear;
+      margin-right: 16px;
+      border-radius: 16px;
+      font-size: 2rem;
+    }
+  }
 </style>
 </head>
 <body>
@@ -180,8 +225,8 @@
 (function () {
   // 商品名稱與價格寫死在這裡，要調整價格或品項直接改這個陣列即可
   var products = [
-    { id: 'p1', name: '蔥仔條', price: 15 },
-    { id: 'p2', name: '水煎包', price: 17 },
+    { id: 'p1', name: '蔥仔條', price: 13 },
+    { id: 'p2', name: '水煎包', price: 15 },
     { id: 'p3', name: '飲料(包)', price: 20 },
     { id: 'p4', name: '飲料(杯)', price: 15 }
   ];
@@ -207,7 +252,7 @@
     products.forEach(function (p) {
       var qty = quantities[p.id];
       var card = document.createElement('div');
-      card.className = 'product-card';
+      card.className = 'product-card card-' + p.id;
       card.innerHTML =
         '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
         '<div class="product-price">單價 ' + formatMoney(p.price) + '</div>' +
