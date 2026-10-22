@@ -1,0 +1,9 @@
+{
+  "name": "早餐店計算機",
+  "short_name": "早餐計算機",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fdf6ec",
+  "theme_color": "#d97b3f"
+}
