@@ -65,9 +65,23 @@
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name  plus"
+      "price plus"
+      "qty   plus"
+      "sub   plus";
+    column-gap: 12px;
+    row-gap: 10px;
+  }
+  .product-name { grid-area: name; }
+  .product-price { grid-area: price; }
+  .qty-row { grid-area: qty; }
+  .subtotal { grid-area: sub; }
+  .plus-col {
+    grid-area: plus;
+    align-self: center;
   }
   .product-name {
     font-size: 2.6rem;
@@ -80,7 +94,6 @@
   .qty-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
   }
   .qty-btn {
@@ -121,7 +134,6 @@
     text-align: center;
   }
   .subtotal {
-    text-align: right;
     font-size: 2rem;
     color: var(--accent-dark);
     font-weight: 600;
@@ -179,7 +191,7 @@
     }
     header { grid-area: header; }
     main, footer.total-bar { display: contents; }
-    .product-card { justify-content: space-between; }
+    .product-card { align-content: space-between; }
     .product-card:nth-child(1) { margin-left: 16px; }
     .product-card:nth-child(4) { margin-left: 16px; }
     .card-p1 { grid-area: p1; }
@@ -266,11 +278,11 @@
         '<div class="qty-row">' +
           '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">－</button>' +
           '<div class="qty-value" id="qty-' + p.id + '">' + qty + '</div>' +
-          '<div class="plus-col">' +
-            p.steps.map(function (n) {
-              return '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="' + n + '" aria-label="增加' + n + '">+' + n + '</button>';
-            }).join('') +
-          '</div>' +
+        '</div>' +
+        '<div class="plus-col">' +
+          p.steps.map(function (n) {
+            return '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="' + n + '" aria-label="增加' + n + '">+' + n + '</button>';
+          }).join('') +
         '</div>' +
         '<div class="subtotal" id="subtotal-' + p.id + '">' + formatMoney(qty * p.price) + '</div>';
       productListEl.appendChild(card);
