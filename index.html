@@ -109,21 +109,10 @@
   .qty-btn.plus {
     font-size: 1.4rem;
   }
-  .quick-row {
+  .plus-col {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 4px;
-  }
-  .qty-btn.plus5 {
-    width: auto;
-    height: 44px;
-    padding: 0 18px;
-    border-radius: 22px;
-    font-size: 1.05rem;
-    background: var(--accent-dark);
-  }
-  .qty-btn.plus5:active {
-    background: #96521f;
+    flex-direction: column;
+    gap: 10px;
   }
   .qty-value {
     font-size: 2rem;
@@ -147,11 +136,17 @@
     border-top: 1px solid var(--border);
   }
   .total {
-    font-size: 1.8rem;
+    font-size: 2.4rem;
     font-weight: 700;
   }
   .total span {
     color: var(--accent-dark);
+  }
+  .clear-area {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
   .clear-btn {
     padding: 16px 24px;
@@ -163,6 +158,11 @@
   }
   .clear-btn:active {
     opacity: 0.85;
+  }
+  .countdown {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1rem;
   }
 
   /* 平板橫放：3 欄 x 2 列，總計與清空放在右側欄 */
@@ -199,15 +199,20 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 2rem;
+      font-size: 2.8rem;
     }
-    .total span { font-size: 3rem; }
-    .clear-btn {
+    .total span { font-size: 4.2rem; }
+    .clear-area {
       grid-area: clear;
       margin-right: 16px;
+      gap: 10px;
+    }
+    .clear-btn {
+      flex: 1;
       border-radius: 16px;
       font-size: 2rem;
     }
+    .countdown { font-size: 1.4rem; }
   }
 </style>
 </head>
@@ -221,7 +226,10 @@
 
   <footer class="total-bar">
     <div class="total">總計 <span id="totalAmount">$0</span></div>
-    <button id="clearBtn" class="clear-btn">清空</button>
+    <div class="clear-area">
+      <button id="clearBtn" class="clear-btn">清空</button>
+      <div class="countdown"><span id="countdown">100</span> 秒後自動清空</div>
+    </div>
   </footer>
 </div>
 
@@ -260,13 +268,14 @@
       card.innerHTML =
         '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
         '<div class="product-price">單價 ' + formatMoney(p.price) + '</div>' +
-        '<div class="quick-row">' +
-          '<button class="qty-btn plus5" data-id="' + p.id + '" data-dir="5" aria-label="增加5">+5</button>' +
-        '</div>' +
         '<div class="qty-row">' +
           '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">－</button>' +
           '<div class="qty-value" id="qty-' + p.id + '">' + qty + '</div>' +
-          '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="1" aria-label="增加1">+1</button>' +
+          '<div class="plus-col">' +
+            '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="10" aria-label="增加10">+10</button>' +
+            '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="5" aria-label="增加5">+5</button>' +
+            '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="1" aria-label="增加1">+1</button>' +
+          '</div>' +
         '</div>' +
         '<div class="subtotal" id="subtotal-' + p.id + '">' + formatMoney(qty * p.price) + '</div>';
       productListEl.appendChild(card);
@@ -325,10 +334,34 @@
     el.addEventListener('pointercancel', stop);
   }
 
-  document.getElementById('clearBtn').addEventListener('click', function () {
+  function clearAll() {
     products.forEach(function (p) { quantities[p.id] = 0; });
     renderProducts();
-  });
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+  // 閒置倒數：IDLE_SECONDS 秒內沒有任何操作就自動清空，有操作就重新倒數
+  var IDLE_SECONDS = 100;
+  var countdownEl = document.getElementById('countdown');
+  var remaining = IDLE_SECONDS;
+
+  function resetCountdown() {
+    remaining = IDLE_SECONDS;
+    countdownEl.textContent = remaining;
+  }
+
+  setInterval(function () {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearAll();
+      resetCountdown();
+      return;
+    }
+    countdownEl.textContent = remaining;
+  }, 1000);
+
+  document.addEventListener('pointerdown', resetCountdown, true);
 
   renderProducts();
 
