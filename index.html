@@ -142,13 +142,12 @@
   .total span {
     color: var(--accent-dark);
   }
-  .clear-area {
+  .clear-btn {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-  .clear-btn {
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     padding: 16px 24px;
     font-size: 1.2rem;
     border: none;
@@ -160,9 +159,8 @@
     opacity: 0.85;
   }
   .countdown {
-    text-align: center;
-    color: var(--muted);
-    font-size: 1rem;
+    font-size: 0.8rem;
+    opacity: 0.85;
   }
 
   /* 平板橫放：3 欄 x 2 列，總計與清空放在右側欄 */
@@ -202,17 +200,13 @@
       font-size: 2.8rem;
     }
     .total span { font-size: 4.2rem; }
-    .clear-area {
+    .clear-btn {
       grid-area: clear;
       margin-right: 16px;
-      gap: 10px;
-    }
-    .clear-btn {
-      flex: 1;
       border-radius: 16px;
       font-size: 2rem;
     }
-    .countdown { font-size: 1.4rem; }
+    .countdown { font-size: 1.2rem; }
   }
 </style>
 </head>
@@ -226,10 +220,10 @@
 
   <footer class="total-bar">
     <div class="total">總計 <span id="totalAmount">$0</span></div>
-    <div class="clear-area">
-      <button id="clearBtn" class="clear-btn">清空</button>
-      <div class="countdown"><span id="countdown">100</span> 秒後自動清空</div>
-    </div>
+    <button id="clearBtn" class="clear-btn">
+      清空
+      <span class="countdown"><span id="countdown">100</span> 秒後自動清空</span>
+    </button>
   </footer>
 </div>
 
@@ -237,10 +231,11 @@
 (function () {
   // 商品名稱與價格寫死在這裡，要調整價格或品項直接改這個陣列即可
   var products = [
-    { id: 'p1', name: '蔥仔條', price: 13 },
-    { id: 'p2', name: '水煎包', price: 15 },
-    { id: 'p3', name: '飲料(包)', price: 20 },
-    { id: 'p4', name: '飲料(杯)', price: 15 }
+    // steps：右側加號按鈕由上到下的增加量
+    { id: 'p1', name: '蔥仔條', price: 13, steps: [10, 5, 1] },
+    { id: 'p2', name: '水煎包', price: 15, steps: [10, 5, 1] },
+    { id: 'p3', name: '飲料(包)', price: 20, steps: [5, 1] },
+    { id: 'p4', name: '飲料(杯)', price: 15, steps: [5, 1] }
   ];
 
   var quantities = {};
@@ -272,9 +267,9 @@
           '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">－</button>' +
           '<div class="qty-value" id="qty-' + p.id + '">' + qty + '</div>' +
           '<div class="plus-col">' +
-            '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="10" aria-label="增加10">+10</button>' +
-            '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="5" aria-label="增加5">+5</button>' +
-            '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="1" aria-label="增加1">+1</button>' +
+            p.steps.map(function (n) {
+              return '<button class="qty-btn plus" data-id="' + p.id + '" data-dir="' + n + '" aria-label="增加' + n + '">+' + n + '</button>';
+            }).join('') +
           '</div>' +
         '</div>' +
         '<div class="subtotal" id="subtotal-' + p.id + '">' + formatMoney(qty * p.price) + '</div>';
