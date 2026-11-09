@@ -25,6 +25,8 @@
     -webkit-user-select: none;
     -webkit-touch-callout: none;
     user-select: none;
+    /* 關閉連點兩下放大（保留單擊與捲動） */
+    touch-action: manipulation;
   }
   html, body {
     margin: 0; padding: 0; height: 100%;
@@ -38,18 +40,6 @@
     flex-direction: column;
     height: 100vh;
     height: 100dvh;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    padding: 16px 20px;
-    background: var(--accent);
-    color: white;
-    flex-shrink: 0;
-  }
-  header h1 {
-    font-size: 1.6rem;
-    margin: 0;
   }
   main {
     flex: 1;
@@ -68,15 +58,14 @@
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas:
-      "name  plus"
-      "price plus"
+      "head  plus"
       "qty   plus"
       "sub   plus";
     column-gap: 12px;
     row-gap: 10px;
   }
-  .product-name { grid-area: name; }
-  .product-price { grid-area: price; }
+  /* 品名與單價包在一起，橫放拉高時中間不會被撐出空白 */
+  .product-head { grid-area: head; }
   .qty-row { grid-area: qty; }
   .subtotal { grid-area: sub; }
   .plus-col {
@@ -94,7 +83,7 @@
   .qty-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 32px;
   }
   .qty-btn {
     width: 64px;
@@ -115,6 +104,7 @@
   }
   .qty-btn.minus {
     background: #b0a495;
+    font-size: 1.4rem;
   }
   .qty-btn.minus:active {
     background: #948a7d;
@@ -128,8 +118,9 @@
     gap: 10px;
   }
   .qty-value {
-    font-size: 2rem;
+    font-size: 2.8rem;
     font-weight: 700;
+    color: #2e7d32;
     min-width: 56px;
     text-align: center;
   }
@@ -151,8 +142,46 @@
     font-size: 2.4rem;
     font-weight: 700;
   }
-  .total span {
+  #totalAmount {
     color: var(--accent-dark);
+  }
+  /* 客人付款金額：500 / 1000，選取後顯示找零 */
+  .pay-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .pay-btn {
+    min-width: 84px;
+    padding: 10px 16px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border: 3px solid var(--accent);
+    border-radius: 12px;
+    background: white;
+    color: var(--accent-dark);
+  }
+  .pay-btn.selected {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(217, 123, 63, 0.35);
+  }
+  .change {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #2e7d32;
+    text-align: center;
+    margin-top: 6px;
+    /* 預留一行高度，沒選付款金額時版面也不會跳動 */
+    min-height: 1.3em;
+    line-height: 1.3;
+  }
+  .change.short {
+    color: var(--danger);
   }
   .clear-btn {
     display: flex;
@@ -180,16 +209,15 @@
     .app {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: auto 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
       grid-template-areas:
-        "header header header"
         "p1     p2     total"
         "p4     p3     clear";
       gap: 16px;
+      padding-top: calc(16px + env(safe-area-inset-top));
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
       overflow-y: auto;
     }
-    header { grid-area: header; }
     main, footer.total-bar { display: contents; }
     .product-card { align-content: space-between; }
     .product-card:nth-child(1) { margin-left: 16px; }
@@ -211,7 +239,9 @@
       gap: 8px;
       font-size: 2.8rem;
     }
-    .total span { font-size: 4.2rem; }
+    #totalAmount { font-size: 4.2rem; }
+    .pay-btn { font-size: 1.8rem; }
+    .change { font-size: 2rem; }
     .clear-btn {
       grid-area: clear;
       margin-right: 16px;
@@ -224,14 +254,17 @@
 </head>
 <body>
 <div class="app">
-  <header>
-    <h1>早餐店計算機</h1>
-  </header>
-
   <main id="productList"></main>
 
   <footer class="total-bar">
-    <div class="total">總計 <span id="totalAmount">$0</span></div>
+    <div class="total">
+      <div>總計 <span id="totalAmount">$0</span></div>
+      <div class="pay-row">
+        <button class="pay-btn" data-amount="500">500</button>
+        <button class="pay-btn" data-amount="1000">1000</button>
+      </div>
+      <div class="change" id="changeText"></div>
+    </div>
     <button id="clearBtn" class="clear-btn">
       清空
       <span class="countdown"><span id="countdown">100</span> 秒後自動清空</span>
@@ -273,10 +306,12 @@
       var card = document.createElement('div');
       card.className = 'product-card card-' + p.id;
       card.innerHTML =
-        '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
-        '<div class="product-price">單價 ' + formatMoney(p.price) + '</div>' +
+        '<div class="product-head">' +
+          '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+          '<div class="product-price">單價 ' + formatMoney(p.price) + '</div>' +
+        '</div>' +
         '<div class="qty-row">' +
-          '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">－</button>' +
+          '<button class="qty-btn minus" data-id="' + p.id + '" data-dir="-1" aria-label="減少">-1</button>' +
           '<div class="qty-value" id="qty-' + p.id + '">' + qty + '</div>' +
         '</div>' +
         '<div class="plus-col">' +
@@ -308,7 +343,40 @@
       total += (quantities[p.id] || 0) * p.price;
     });
     totalAmountEl.textContent = formatMoney(total);
+    updateChange(total);
   }
+
+  // 客人付款金額（0 代表未選），再按一次同一顆可取消
+  var paidAmount = 0;
+  var payButtons = document.querySelectorAll('.pay-btn');
+  var changeTextEl = document.getElementById('changeText');
+
+  function updateChange(total) {
+    payButtons.forEach(function (btn) {
+      btn.classList.toggle('selected', parseInt(btn.getAttribute('data-amount'), 10) === paidAmount);
+    });
+    if (!paidAmount) {
+      changeTextEl.textContent = '';
+      changeTextEl.classList.remove('short');
+      return;
+    }
+    var diff = paidAmount - total;
+    if (diff >= 0) {
+      changeTextEl.textContent = '找 ' + formatMoney(diff);
+      changeTextEl.classList.remove('short');
+    } else {
+      changeTextEl.textContent = '不足 ' + formatMoney(-diff);
+      changeTextEl.classList.add('short');
+    }
+  }
+
+  payButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var amount = parseInt(btn.getAttribute('data-amount'), 10);
+      paidAmount = (paidAmount === amount) ? 0 : amount;
+      updateTotal();
+    });
+  });
 
   function attachQtyHandlers() {
     var buttons = productListEl.querySelectorAll('.qty-btn');
@@ -343,6 +411,7 @@
 
   function clearAll() {
     products.forEach(function (p) { quantities[p.id] = 0; });
+    paidAmount = 0;
     renderProducts();
   }
 
@@ -369,6 +438,10 @@
   }, 1000);
 
   document.addEventListener('pointerdown', resetCountdown, true);
+
+  // iPad Safari 會忽略 user-scalable=no，這裡額外擋掉雙指縮放與雙擊放大
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  document.addEventListener('dblclick', function (e) { e.preventDefault(); }, { passive: false });
 
   renderProducts();
 
